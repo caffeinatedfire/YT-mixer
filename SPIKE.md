@@ -8,28 +8,39 @@ A single click handler calling `playVideo()` on both players put both in PLAYING
 (UNSTARTED -> BUFFERING -> PLAYING). Caveat: tested in the in-app browser, not desktop Chrome/Safari,
 whose autoplay policies are stricter. Re-check in real Chrome before Phase 1.
 
-## 1b. B started later from a timer (no gesture): PENDING (host runs in real Chrome)
-Button "Q1b": click plays A only; 20s later a `setTimeout` calls `P.b.setVolume(100)` then `P.b.playVideo()`.
-Log shows B's state at +2s and +5s. Result: _TBD_.
-Decision: add the "unlock B" fallback (play B at volume 0 then pause, inside the Start click) ONLY if this fails.
+## Real-Chrome results (host, 2026-10-15, on https://yt-mixer-two.vercel.app): ALL CLOSED
+The host ran every pending test from the test plan and reported all OK:
+Q1b, Q2, Q3, Space on a focused button, the 10-minute hidden-tab autopilot run, and the final
+acceptance run (6 videos including one blocked, 20 minutes, tab hidden for half).
+Consequences:
+- Q1 confirmed in real Chrome.
+- Q1b passed, so the "unlock B" fallback is **not needed** and was not built.
+- Q2 passed: setInterval fades stay usable with the tab hidden.
+- Q3: no reliable ad signal was reported, so **manual Mix now stays the default**
+  (`AD_SIGNAL_RELIABLE = false`) and autopilot stays opt-in with its ad warning.
 
-## 2. 60s volume ramp with tab hidden: NOT VERIFIED
+## 1b. B started later from a timer (no gesture): PASS (real Chrome)
+Button "Q1b": click plays A only; 20s later a `setTimeout` calls `P.b.setVolume(100)` then `P.b.playVideo()`.
+Log shows B's state at +2s and +5s. Result: OK per host.
+Decision: add the "unlock B" fallback (play B at volume 0 then pause, inside the Start click) ONLY if this fails. Not needed.
+
+## 2. 60s volume ramp with tab hidden: PASS (real Chrome, host)
+Original in-app-browser notes:
 `setInterval(250ms)` + `performance.now()` ramp ran smoothly (max gap 266ms, so no drift)
 but `document.hidden` stayed `false` the whole time. The in-app browser did not really hide the tab
 even with another tab in front. Needs a manual test in real Chrome: open spike.html, press Q2, switch tab,
 return, read the log (`maxGap` and `hidden=true` lines). Expect throttling to ~1s in background tabs,
 which is fine for fades.
 
-## 3. Ad signal during pre-roll: NOT VERIFIED
-No ad appeared in any load, so nothing to compare. Observed for normal playback:
+## 3. Ad signal during pre-roll: CLOSED, no reliable signal adopted
+Host ran the auto-probe in real Chrome and reported OK. No reliable ad signal was reported, so the decision below stands.
+Original in-app-browser notes: no ad appeared in any load, so nothing to compare. Observed for normal playback:
 `getDuration()` = 214 / 253, `getVideoData()` returns title, `video_id`, `author`; `getVideoUrl()` works.
 Idea to check manually once an ad shows: compare `getVideoData().video_id` and `getDuration()` against
 the expected video (ads reportedly return the ad's duration, or video_id mismatch).
 Until confirmed, Phase 6 should follow the "no reliable ad signal" path (host presses Mix now).
 Button "Q3 auto-probe" now probes both players every 3s for 60s; state changes are logged as they happen.
-Result from real Chrome: _TBD_.
-
-**Decision:** Phase 6 defaults to manual "Mix now" until this section says a reliable ad signal exists.
+**Decision (final):** Phase 6 defaults to manual "Mix now" until this section says a reliable ad signal exists.
 Autopilot (Phase 7) stays behind a toggle.
 
 ## 4. Embed-blocked error code: CLOSED

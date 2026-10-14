@@ -30,7 +30,7 @@ Two IFrame players with a plain HTML page. Write findings to SPIKE.md:
 4. Which error code fires for an embed-blocked video?
 GATE: stop and report. If (1) fails, we redesign before building.
 
-Phase 0 status: see SPIKE.md. Q1 pass (in-app browser), Q4 closed; Q1b, Q2, Q3 pending a real-Chrome run by the host.
+Phase 0 status: CLOSED (2026-10-15). All questions passed in real Chrome on the deployed site; Q3 found no reliable ad signal. See SPIKE.md.
 
 ## Phase 1: Scaffold
 Vite react-ts, vitest, folder layout: src/lib (pure logic), src/hooks, src/components, src/state. CSS variables for colours, spacing and type. Commit.
@@ -51,17 +51,17 @@ GATE: stop and show me a screenshot. I will review the design before the logic g
 
 ## Phase 5: Queue and deck handoff
 Adding a link appends to the queue. The first two items auto-cue into A and B (paused). After a mix, the outgoing deck cues the next item. An empty queue shows "Add a song" on that deck. A deck error skips to the next item.
-- ONLY if SPIKE.md Q1b fails: add the "unlock B" fallback (inside the Start click, play B at volume 0, then pause it). Can land here or in Phase 8.
+- ONLY if SPIKE.md Q1b fails: add the "unlock B" fallback (inside the Start click, play B at volume 0, then pause it). Can land here or in Phase 8. (Q1b passed: not needed, not built.)
 
 ## Phase 6: Transition engine
 - "Mix now" button and a fade-length setting (default 6s).
 - Sequence: start incoming deck at gain 0, wait for PLAYING (5s timeout fallback), ramp x to the other end, then pause the outgoing deck and cue the next item.
 - Dragging the crossfader mid-fade cancels the auto fade.
 - Guard against double-triggers.
-- Default is manual "Mix now" (no reliable ad signal) until SPIKE.md Q3 says otherwise: do not blind-fade. Show the incoming deck's state and let the host press "Mix now" once the song is audible.
+- Default is manual "Mix now" (no reliable ad signal) (final: Q3 closed with no reliable ad signal): do not blind-fade. Show the incoming deck's state and let the host press "Mix now" once the song is audible.
 
 ## Phase 7: Autopilot
-Stays behind a toggle (off by default while Q3 is unresolved), plus a "start mixing N s before end" setting (default 8s). Poll the active deck every 250ms and trigger once per track. Fallback: if a deck hits ENDED with no mix, hard-cut to the other deck. Test in a hidden tab for 10 min.
+Stays behind a toggle (off by default; Q3 closed with no ad signal), plus a "start mixing N s before end" setting (default 8s). Poll the active deck every 250ms and trigger once per track. Fallback: if a deck hits ENDED with no mix, hard-cut to the other deck. Test in a hidden tab for 10 min (passed, 2026-10-15).
 
 ## Phase 8: Master controls
 - Play/Pause all: remembers which decks were playing and resumes exactly those. A cued deck stays paused, never silently playing.
@@ -78,4 +78,4 @@ EQ, beat-match, Layer mode, playlist import, accounts, backend, mobile, Chrome e
 - One commit per phase, tests passing.
 - Add no dependencies beyond react, vite, vitest and typing packages.
 - Stop at the two GATES. Ask before changing the layout.
-- Final acceptance: 6 real videos (including one embed-blocked), 20-minute autopilot run, tab hidden for half of it.
+- Final acceptance: 6 real videos (including one embed-blocked), 20-minute autopilot run, tab hidden for half of it. PASSED (host, 2026-10-15, https://yt-mixer-two.vercel.app).
