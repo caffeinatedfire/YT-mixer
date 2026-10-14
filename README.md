@@ -41,7 +41,7 @@ npm run build      # typecheck + production build into dist/
 
 Serve over `http://localhost`, never `file://`: the YouTube player needs a real origin.
 
-`spike.html` is the Phase 0 test page (two raw players). With `npm run dev` running, open http://localhost:5173/spike.html. Findings are in `SPIKE.md`.
+`public/spike.html` is the Phase 0 test page (two raw players). It is deployed as-is: open `/spike.html` on the dev server or the deployed site. Findings are in `SPIKE.md`.
 
 ### Layout
 
