@@ -6,7 +6,7 @@ Web app where a casual party host pastes YouTube links into ONE shared queue. Tw
 ## Locked decisions (do not re-ask)
 - Stack: Vite + React + TypeScript, plain CSS with variables, vitest. No UI library, no state library (use useReducer).
 - Audio: YouTube IFrame Player API only (setVolume 0-100). No Web Audio, EQ or beat-matching.
-- Layout: top = add-link bar. Middle = Deck A | Deck B side by side. Below = crossfader + master controls. Bottom = "Up next" queue.
+- Layout: top = add-link bar. Below it, a 70/30 split: left = Deck A | Deck B side by side, with crossfader + master controls under them; right = "Up next" queue (sticky, scrolls on its own). Stacks to one column below 1024px. (Changed after Phase 7 at the host's request; the queue was originally at the bottom.)
 - Queue flow: A plays track 1 while B has track 2 cued (paused). On a mix, B starts and fades in as A fades out. When done, A pauses and cues the next queue item. The crossfader slides left/right on each mix.
 - Curve (equal-power): gainA = cos(x*PI/2), gainB = sin(x*PI/2), x = crossfader 0..1. Final volume = round(gain * deck trim).
 - Persona: casual party host, so hands-off matters more than precision. Layer mode is cut.

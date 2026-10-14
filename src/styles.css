@@ -28,7 +28,7 @@ body { margin: 0; background: var(--bg); color: var(--text); font: var(--text-md
 button, input, textarea { font: inherit; color: inherit; }
 
 .app {
-  max-width: 1120px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: var(--space-5) var(--space-4) var(--space-6);
   display: flex;
@@ -166,7 +166,23 @@ button, input, textarea { font: inherit; color: inherit; }
 .crossfader__input { flex: 1; accent-color: var(--accent); height: 24px; }
 .master { display: flex; gap: var(--space-2); }
 
+/* Workspace: decks + mixer (70%) | queue (30%) */
+.workspace { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: var(--space-4); align-items: start; }
+.workspace__main { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+
 /* Queue */
+.queue {
+  position: sticky;
+  top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2 * var(--space-4));
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-width: 0;
+}
+.queue__list { overflow-y: auto; }
 .queue__head { display: flex; align-items: center; justify-content: space-between; }
 .queue__title { margin: 0; font-size: var(--text-lg); font-weight: 600; }
 .queue__count { margin-left: var(--space-1); font-weight: 400; color: var(--text-muted); font-size: var(--text-sm); }
@@ -197,6 +213,11 @@ button, input, textarea { font: inherit; color: inherit; }
 }
 .toast__close { color: #fff; }
 .toast__close:hover:not(:disabled) { background: rgb(255 255 255 / 0.12); }
+
+@media (max-width: 1024px) {
+  .workspace { grid-template-columns: 1fr; }
+  .queue { position: static; max-height: none; }
+}
 
 @media (max-width: 760px) {
   .decks { grid-template-columns: 1fr; }

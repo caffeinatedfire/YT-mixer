@@ -107,34 +107,39 @@ export default function App() {
     <div className="app">
       <AddBar onAdd={(text) => dispatch({ type: 'add', text })} rejected={queue.rejected} />
 
-      <div className="decks">
-        <Deck id="A" player={playerA} item={decks.A} trim={trim.A} onTrim={(v) => setTrim((t) => ({ ...t, A: v }))} gain={g.a} />
-        <Deck id="B" player={playerB} item={decks.B} trim={trim.B} onTrim={(v) => setTrim((t) => ({ ...t, B: v }))} gain={g.b} />
-      </div>
+      {/* Decks and mixer on the left (70%), queue on the right (30%). */}
+      <div className="workspace">
+        <div className="workspace__main">
+          <div className="decks">
+            <Deck id="A" player={playerA} item={decks.A} trim={trim.A} onTrim={(v) => setTrim((t) => ({ ...t, A: v }))} gain={g.a} />
+            <Deck id="B" player={playerB} item={decks.B} trim={trim.B} onTrim={(v) => setTrim((t) => ({ ...t, B: v }))} gain={g.b} />
+          </div>
 
-      <Mixer x={x} onX={onCrossfader} anyPlaying={anyPlaying} onPlayPauseAll={playPauseAll} muted={muted} onMuteAll={toggleMute}>
-        <MixControls
-          mix={mix}
-          incoming={incoming}
-          incomingReady={!!decks[incoming] && players[incoming].ready && players[incoming].error === null}
-          incomingLive={isLive(players[incoming].state)}
-          blindMixAllowed={AD_SIGNAL_RELIABLE}
-          fadeSeconds={fadeSeconds}
-          onFadeSeconds={setFadeSeconds}
-          autopilot={autopilot}
-          onAutopilot={setAutopilot}
-          leadSeconds={leadSeconds}
-          onLeadSeconds={setLeadSeconds}
-          onStartIncoming={players[incoming].play}
-          onMixNow={engine.start}
+          <Mixer x={x} onX={onCrossfader} anyPlaying={anyPlaying} onPlayPauseAll={playPauseAll} muted={muted} onMuteAll={toggleMute}>
+            <MixControls
+              mix={mix}
+              incoming={incoming}
+              incomingReady={!!decks[incoming] && players[incoming].ready && players[incoming].error === null}
+              incomingLive={isLive(players[incoming].state)}
+              blindMixAllowed={AD_SIGNAL_RELIABLE}
+              fadeSeconds={fadeSeconds}
+              onFadeSeconds={setFadeSeconds}
+              autopilot={autopilot}
+              onAutopilot={setAutopilot}
+              leadSeconds={leadSeconds}
+              onLeadSeconds={setLeadSeconds}
+              onStartIncoming={players[incoming].play}
+              onMixNow={engine.start}
+            />
+          </Mixer>
+        </div>
+
+        <Queue
+          items={queue.items}
+          onRemove={(uid) => dispatch({ type: 'remove', uid })}
+          onClear={() => dispatch({ type: 'clear' })}
         />
-      </Mixer>
-
-      <Queue
-        items={queue.items}
-        onRemove={(uid) => dispatch({ type: 'remove', uid })}
-        onClear={() => dispatch({ type: 'clear' })}
-      />
+      </div>
 
       <Toast toast={toast} onDismiss={dismissToast} />
     </div>
