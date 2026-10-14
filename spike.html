@@ -1,0 +1,73 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Phase 0 spike</title>
+<style>
+body{font:14px system-ui;margin:16px}
+.row{display:flex;gap:16px}
+.p{width:320px;height:200px;background:#000}
+pre{background:#f4f4f4;padding:8px;height:260px;overflow:auto;font-size:12px}
+button,input{margin:2px}
+</style></head><body>
+<h3>YT spike</h3>
+<div>Video IDs: A <input id="ia" value="dQw4w9WgXcQ"> B <input id="ib" value="9bZkp7q19f0">
+<button id="load">Load both</button></div>
+<div class="row"><div><div id="pa" class="p"></div></div><div><div id="pb" class="p"></div></div></div>
+<div>
+<button id="one">Q1: ONE click -> play both</button>
+<button id="q1b">Q1b: click plays A, B starts 20s later (no click)</button>
+<button id="q3auto">Q3 auto-probe (every 3s for 60s)</button>
+<button id="ramp">Q2: 60s ramp (A up, B down)</button>
+<button id="probe">Q3: probe now</button>
+<label>Error test ID <input id="ie" value="aaaaaaaaaaa"></label><button id="err">Q4: load into A</button>
+</div>
+<pre id="log"></pre>
+<script>
+const log=m=>{const l=document.getElementById('log');const t=(performance.now()/1000).toFixed(1);l.textContent+=`[${t}] ${m}\n`;l.scrollTop=l.scrollHeight;console.log(m)};
+const P={};
+const S={'-1':'UNSTARTED',0:'ENDED',1:'PLAYING',2:'PAUSED',3:'BUFFERING',5:'CUED'};
+const tag=document.createElement('script');tag.src='https://www.youtube.com/iframe_api';document.head.appendChild(tag);
+window.onYouTubeIframeAPIReady=()=>{
+  for(const k of ['a','b']){
+    P[k]=new YT.Player('p'+k,{width:320,height:200,videoId:document.getElementById('i'+k).value,
+      playerVars:{playsinline:1},
+      events:{onReady:()=>log(k+' ready'),
+        onStateChange:e=>log(`${k} state ${S[e.data]||e.data} t=${P[k].getCurrentTime().toFixed(1)} dur=${P[k].getDuration()}`),
+        onError:e=>log(`${k} ERROR code ${e.data}`)}});
+  }
+};
+const probe=k=>{const p=P[k];const d=p.getVideoData();log(`${k}: dur=${p.getDuration()} t=${p.getCurrentTime().toFixed(1)} title="${d.title}" id=${d.video_id} author="${d.author}" state=${S[p.getPlayerState()]} url=${p.getVideoUrl()}`)};
+document.getElementById('load').onclick=()=>{for(const k of ['a','b'])P[k].cueVideoById(document.getElementById('i'+k).value)};
+document.getElementById('one').onclick=()=>{P.a.setVolume(100);P.b.setVolume(100);P.a.playVideo();P.b.playVideo();log('play both called in single click handler')};
+document.getElementById('probe').onclick=()=>{probe('a');probe('b')};
+document.getElementById('err').onclick=()=>{P.a.loadVideoById(document.getElementById('ie').value)};
+document.getElementById('ramp').onclick=()=>{
+  const t0=performance.now(),D=60000;let last=t0,maxGap=0,n=0;
+  const id=setInterval(()=>{
+    const now=performance.now(),x=Math.min(1,(now-t0)/D);
+    maxGap=Math.max(maxGap,now-last);last=now;n++;
+    P.a.setVolume(Math.round(100*Math.sin(x*Math.PI/2)));P.b.setVolume(Math.round(100*Math.cos(x*Math.PI/2)));
+    if(n%10===0)log(`ramp x=${x.toFixed(2)} vol A=${P.a.getVolume()} B=${P.b.getVolume()} hidden=${document.hidden} maxGap=${maxGap.toFixed(0)}ms`);
+    if(x>=1){clearInterval(id);log(`ramp done ticks=${n} maxGap=${maxGap.toFixed(0)}ms`)}
+  },250);
+  log('ramp started, hide the tab now');
+};
+document.getElementById('q1b').onclick=()=>{
+  P.b.pauseVideo();P.a.setVolume(100);P.a.playVideo();
+  log('Q1b: A play called in click; B will be started by setTimeout in 20s');
+  setTimeout(()=>{
+    P.b.setVolume(100);P.b.playVideo();
+    log('Q1b: B setVolume(100)+playVideo() called from setTimeout (no gesture)');
+    for(const s of [2,5])setTimeout(()=>log(`Q1b: +${s}s B state=${S[P.b.getPlayerState()]} t=${P.b.getCurrentTime().toFixed(1)} muted=${P.b.isMuted()} vol=${P.b.getVolume()}`),s*1000);
+  },20000);
+};
+document.getElementById('q3auto').onclick=()=>{
+  const t0=performance.now();
+  log('Q3 auto-probe started (60s). State changes are logged as they happen.');
+  probe('a');probe('b');
+  const id=setInterval(()=>{
+    probe('a');probe('b');
+    if(performance.now()-t0>=60000){clearInterval(id);log('Q3 auto-probe done')}
+  },3000);
+};
+document.addEventListener('visibilitychange',()=>log('visibility hidden='+document.hidden));
+window.spike={P,probe,log};
+</script></body></html>
