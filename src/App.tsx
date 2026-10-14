@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useReducer, useState } from 'react';
 import { AddBar } from './components/AddBar';
 import { Deck, ERROR_MESSAGE } from './components/Deck';
+import { MixControls } from './components/MixControls';
 import { Mixer } from './components/Mixer';
 import { Queue } from './components/Queue';
 import { Toast, type ToastMessage } from './components/Toast';
 import { useDeckLoader } from './hooks/useDeckLoader';
+import { useTransitionEngine } from './hooks/useTransitionEngine';
 import { useYouTubePlayer } from './hooks/useYouTubePlayer';
+import { AD_SIGNAL_RELIABLE, DEFAULT_FADE_SECONDS } from './lib/config';
+import { outgoingDeck } from './lib/fade';
 import { deckVolume, gains } from './lib/gains';
 import { initialSession, sessionReducer } from './state/session';
-import type { Deck as DeckId } from './state/mix';
+import { otherDeck, type Deck as DeckId } from './state/mix';
 
 export default function App() {
   const [session, dispatch] = useReducer(sessionReducer, initialSession);
@@ -41,6 +45,25 @@ export default function App() {
     setVolB(deckVolume(g.b, trim.B));
   }, [g.a, g.b, trim.A, trim.B, setVolA, setVolB]);
 
+  const players = { A: playerA, B: playerB };
+  const [fadeSeconds, setFadeSeconds] = useState(DEFAULT_FADE_SECONDS);
+  const engine = useTransitionEngine({
+    players,
+    x,
+    setX,
+    fadeMs: fadeSeconds * 1000,
+    // The outgoing deck is paused; load the next queue item onto it.
+    onMixed: (from) => dispatch({ type: 'advance', deck: from }),
+  });
+  const { mix } = engine;
+  const incoming = mix.kind === 'transitioning' ? mix.to : otherDeck(outgoingDeck(x));
+
+  // Dragging the crossfader mid-fade hands control back to the host.
+  const onCrossfader = (v: number) => {
+    if (mix.kind === 'transitioning') engine.cancel();
+    setX(v);
+  };
+
   const isLive = (s: string) => s === 'playing' || s === 'buffering';
   const anyPlaying = isLive(playerA.state) || isLive(playerB.state);
 
@@ -69,7 +92,19 @@ export default function App() {
         <Deck id="B" player={playerB} item={decks.B} trim={trim.B} onTrim={(v) => setTrim((t) => ({ ...t, B: v }))} gain={g.b} />
       </div>
 
-      <Mixer x={x} onX={setX} anyPlaying={anyPlaying} onPlayPauseAll={playPauseAll} muted={muted} onMuteAll={toggleMute} />
+      <Mixer x={x} onX={onCrossfader} anyPlaying={anyPlaying} onPlayPauseAll={playPauseAll} muted={muted} onMuteAll={toggleMute}>
+        <MixControls
+          mix={mix}
+          incoming={incoming}
+          incomingReady={!!decks[incoming] && players[incoming].ready && players[incoming].error === null}
+          incomingLive={isLive(players[incoming].state)}
+          blindMixAllowed={AD_SIGNAL_RELIABLE}
+          fadeSeconds={fadeSeconds}
+          onFadeSeconds={setFadeSeconds}
+          onStartIncoming={players[incoming].play}
+          onMixNow={engine.start}
+        />
+      </Mixer>
 
       <Queue
         items={queue.items}

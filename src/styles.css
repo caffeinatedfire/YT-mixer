@@ -134,11 +134,30 @@ button, input, textarea { font: inherit; color: inherit; }
 /* Mixer */
 .mixer {
   display: flex;
-  align-items: center;
-  gap: var(--space-5);
+  flex-direction: column;
+  gap: var(--space-3);
   padding: var(--space-4);
   background: var(--surface);
   border-radius: var(--radius);
+}
+.mixer__main { display: flex; align-items: center; gap: var(--space-5); }
+.mix-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+.mix-controls__status { flex: 1; margin: 0; font-size: var(--text-sm); color: var(--text-muted); }
+.mix-controls__fade { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--text-muted); }
+.mix-controls__fade select {
+  height: 36px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  font: inherit;
+  color: var(--text);
 }
 .crossfader { flex: 1; display: flex; align-items: center; gap: var(--space-3); }
 .crossfader__end { font-weight: 600; font-size: var(--text-sm); color: var(--text-muted); }
@@ -179,6 +198,6 @@ button, input, textarea { font: inherit; color: inherit; }
 
 @media (max-width: 760px) {
   .decks { grid-template-columns: 1fr; }
-  .mixer { flex-direction: column; align-items: stretch; }
+  .mixer__main, .mix-controls { flex-direction: column; align-items: stretch; }
   .master { justify-content: center; }
 }
