@@ -10,5 +10,10 @@ export const PLAY_WAIT_TIMEOUT_MS = 5000;
 /** Fade tick. setInterval (not rAF) so fades keep running in hidden tabs. */
 export const FADE_TICK_MS = 50;
 
+/** Autopilot poll. setInterval keeps running in hidden tabs (an audible page is exempt from Chrome's intensive throttling). */
+export const AUTOPILOT_POLL_MS = 250;
+export const DEFAULT_LEAD_SECONDS = 8;
+export const LEAD_OPTIONS_SECONDS = [4, 8, 12, 20, 30];
+
 export const DEFAULT_FADE_SECONDS = 6;
 export const FADE_OPTIONS_SECONDS = [3, 6, 10, 15, 20, 30];

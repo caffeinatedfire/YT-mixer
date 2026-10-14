@@ -6,10 +6,11 @@ import { Mixer } from './components/Mixer';
 import { Queue } from './components/Queue';
 import { Toast, type ToastMessage } from './components/Toast';
 import { useDeckLoader } from './hooks/useDeckLoader';
+import { useAutopilot } from './hooks/useAutopilot';
 import { useTransitionEngine } from './hooks/useTransitionEngine';
 import { useYouTubePlayer } from './hooks/useYouTubePlayer';
-import { AD_SIGNAL_RELIABLE, DEFAULT_FADE_SECONDS } from './lib/config';
-import { outgoingDeck } from './lib/fade';
+import { AD_SIGNAL_RELIABLE, DEFAULT_FADE_SECONDS, DEFAULT_LEAD_SECONDS } from './lib/config';
+import { deckEnd, outgoingDeck } from './lib/fade';
 import { deckVolume, gains } from './lib/gains';
 import { initialSession, sessionReducer } from './state/session';
 import { otherDeck, type Deck as DeckId } from './state/mix';
@@ -58,6 +59,25 @@ export default function App() {
   const { mix } = engine;
   const incoming = mix.kind === 'transitioning' ? mix.to : otherDeck(outgoingDeck(x));
 
+  const [autopilot, setAutopilot] = useState(false);
+  const [leadSeconds, setLeadSeconds] = useState(DEFAULT_LEAD_SECONDS);
+  useAutopilot({
+    enabled: autopilot,
+    leadSeconds,
+    players,
+    decks,
+    x,
+    mix,
+    onMix: engine.start,
+    // The active song ended without a mix: jump straight to the other deck.
+    onHardCut: (from) => {
+      const to = otherDeck(from);
+      setX(deckEnd(to));
+      players[to].play();
+      dispatch({ type: 'advance', deck: from });
+    },
+  });
+
   // Dragging the crossfader mid-fade hands control back to the host.
   const onCrossfader = (v: number) => {
     if (mix.kind === 'transitioning') engine.cancel();
@@ -101,6 +121,10 @@ export default function App() {
           blindMixAllowed={AD_SIGNAL_RELIABLE}
           fadeSeconds={fadeSeconds}
           onFadeSeconds={setFadeSeconds}
+          autopilot={autopilot}
+          onAutopilot={setAutopilot}
+          leadSeconds={leadSeconds}
+          onLeadSeconds={setLeadSeconds}
           onStartIncoming={players[incoming].play}
           onMixNow={engine.start}
         />

@@ -1,4 +1,4 @@
-import { FADE_OPTIONS_SECONDS } from '../lib/config';
+import { FADE_OPTIONS_SECONDS, LEAD_OPTIONS_SECONDS } from '../lib/config';
 import type { Deck, MixState } from '../state/mix';
 
 interface Props {
@@ -11,13 +11,18 @@ interface Props {
   blindMixAllowed: boolean;
   fadeSeconds: number;
   onFadeSeconds: (s: number) => void;
+  autopilot: boolean;
+  onAutopilot: (on: boolean) => void;
+  leadSeconds: number;
+  onLeadSeconds: (s: number) => void;
   onStartIncoming: () => void;
   onMixNow: () => void;
 }
 
 export function MixControls({
   mix, incoming, incomingReady, incomingLive, blindMixAllowed,
-  fadeSeconds, onFadeSeconds, onStartIncoming, onMixNow,
+  fadeSeconds, onFadeSeconds, autopilot, onAutopilot, leadSeconds, onLeadSeconds,
+  onStartIncoming, onMixNow,
 }: Props) {
   const mixing = mix.kind === 'transitioning';
   const canMix = !mixing && incomingReady && (incomingLive || blindMixAllowed);
@@ -25,6 +30,7 @@ export function MixControls({
   let status: string;
   if (mixing) status = `Mixing into ${mix.to}… ${Math.round(mix.progress * 100)}%`;
   else if (!incomingReady) status = `Deck ${incoming} needs a song to mix into.`;
+  else if (autopilot) status = `Autopilot mixes into ${incoming} ${leadSeconds}s before the end. It can't detect ads.`;
   else if (incomingLive) status = `${incoming} is playing underneath. Mix when the song is on, not an ad.`;
   else if (blindMixAllowed) status = `Next up: deck ${incoming}.`;
   else status = `Start ${incoming}, check the song is on (not an ad), then mix.`;
@@ -32,7 +38,25 @@ export function MixControls({
   return (
     <div className="mix-controls">
       <p className="mix-controls__status" role="status">{status}</p>
-      <label className="mix-controls__fade">
+      <div className="mix-controls__group">
+        <button
+          className={`btn${autopilot ? ' btn--active' : ''}`}
+          onClick={() => onAutopilot(!autopilot)}
+          aria-pressed={autopilot}
+        >
+          Autopilot {autopilot ? 'on' : 'off'}
+        </button>
+        <label className="mix-controls__select">
+          Mix
+          <select value={leadSeconds} onChange={(e) => onLeadSeconds(Number(e.target.value))}>
+            {LEAD_OPTIONS_SECONDS.map((s) => (
+              <option key={s} value={s}>{s}s</option>
+            ))}
+          </select>
+          before end
+        </label>
+      </div>
+      <label className="mix-controls__select">
         Fade
         <select value={fadeSeconds} onChange={(e) => onFadeSeconds(Number(e.target.value))} disabled={mixing}>
           {FADE_OPTIONS_SECONDS.map((s) => (
