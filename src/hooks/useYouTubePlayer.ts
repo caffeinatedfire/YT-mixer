@@ -96,7 +96,8 @@ export function useYouTubePlayer(): YouTubePlayerApi {
   }, [ready]);
 
   const cue = useCallback((videoId: string) => {
-    setError(null);
+    // A failed script load (-1) sticks: there is no player to cue into until a reload.
+    setError((e) => (e === -1 ? e : null));
     setTitle('');
     setState('loading');
     if (playerRef.current && ready) playerRef.current.cueVideoById(videoId);

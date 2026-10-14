@@ -4,9 +4,10 @@ import type { QueueItem } from '../state/queue';
 
 /**
  * Keeps a player in step with the item assigned to its deck: cues (paused) whenever the item
- * changes, pauses when the deck empties, and calls onError once per playback error.
+ * changes, pauses when the deck empties, and calls onError once per error with its code
+ * (2/5/100/101/150 from YouTube, or -1 if the player script could not load).
  */
-export function useDeckLoader(player: YouTubePlayerApi, item: QueueItem | null, onError: () => void) {
+export function useDeckLoader(player: YouTubePlayerApi, item: QueueItem | null, onError: (code: number) => void) {
   const latest = useRef({ player, item, onError });
   latest.current = { player, item, onError };
 
@@ -18,6 +19,6 @@ export function useDeckLoader(player: YouTubePlayerApi, item: QueueItem | null, 
   }, [uid]);
 
   useEffect(() => {
-    if (player.error !== null && latest.current.item) latest.current.onError();
+    if (player.error !== null && latest.current.item) latest.current.onError(player.error);
   }, [player.error]);
 }

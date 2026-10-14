@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { AddBar } from './components/AddBar';
-import { Deck, ERROR_MESSAGE } from './components/Deck';
+import { Deck, ERROR_MESSAGE, PLAYER_LOAD_ERROR } from './components/Deck';
 import { MixControls } from './components/MixControls';
 import { Mixer } from './components/Mixer';
 import { Queue } from './components/Queue';
@@ -10,21 +10,27 @@ import { useAutopilot } from './hooks/useAutopilot';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useTransitionEngine } from './hooks/useTransitionEngine';
 import { useYouTubePlayer } from './hooks/useYouTubePlayer';
-import { AD_SIGNAL_RELIABLE, DEFAULT_FADE_SECONDS, DEFAULT_LEAD_SECONDS } from './lib/config';
+import { AD_SIGNAL_RELIABLE } from './lib/config';
+import { loadSession, loadSettings, saveSession, saveSettings } from './lib/storage';
 import { deckEnd, outgoingDeck } from './lib/fade';
 import { deckVolume, gains } from './lib/gains';
 import { decksToResume, nudge, type RememberedDeck } from './lib/master';
-import { initialSession, sessionReducer } from './state/session';
+import { sessionReducer } from './state/session';
 import { otherDeck, type Deck as DeckId } from './state/mix';
 
 const DECKS: DeckId[] = ['A', 'B'];
 
+const IS_IOS =
+  typeof navigator !== 'undefined' &&
+  (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+
 export default function App() {
-  const [session, dispatch] = useReducer(sessionReducer, initialSession);
+  const [session, dispatch] = useReducer(sessionReducer, undefined, () => loadSession());
   const { queue, decks } = session;
+  const [saved] = useState(loadSettings);
   const playerA = useYouTubePlayer();
   const playerB = useYouTubePlayer();
-  const [trim, setTrim] = useState<Record<DeckId, number>>({ A: 100, B: 100 });
+  const [trim, setTrim] = useState<Record<DeckId, number>>({ A: saved.trimA, B: saved.trimB });
   const [x, setX] = useState(0);
   const [muted, setMuted] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
@@ -33,12 +39,19 @@ export default function App() {
   const dismissToast = useCallback(() => setToast(null), []);
 
   // A playback error skips that deck to the next queue item (cued, paused).
-  const skip = (deck: DeckId) => {
+  // -1 means the YouTube script itself failed to load: skipping would just burn through the queue.
+  const onDeckError = (deck: DeckId, code: number) => {
+    if (code === -1) {
+      showToast(PLAYER_LOAD_ERROR);
+      return;
+    }
     showToast(ERROR_MESSAGE);
     dispatch({ type: 'advance', deck });
   };
-  useDeckLoader(playerA, decks.A, () => skip('A'));
-  useDeckLoader(playerB, decks.B, () => skip('B'));
+  useDeckLoader(playerA, decks.A, (code) => onDeckError('A', code));
+  useDeckLoader(playerB, decks.B, (code) => onDeckError('B', code));
+
+  useEffect(() => saveSession(session), [session]);
 
   const g = gains(x);
   const { setVolume: setVolA } = playerA;
@@ -51,7 +64,7 @@ export default function App() {
   }, [g.a, g.b, trim.A, trim.B, setVolA, setVolB]);
 
   const players = { A: playerA, B: playerB };
-  const [fadeSeconds, setFadeSeconds] = useState(DEFAULT_FADE_SECONDS);
+  const [fadeSeconds, setFadeSeconds] = useState(saved.fadeSeconds);
   const engine = useTransitionEngine({
     players,
     x,
@@ -63,8 +76,12 @@ export default function App() {
   const { mix } = engine;
   const incoming = mix.kind === 'transitioning' ? mix.to : otherDeck(outgoingDeck(x));
 
-  const [autopilot, setAutopilot] = useState(false);
-  const [leadSeconds, setLeadSeconds] = useState(DEFAULT_LEAD_SECONDS);
+  const [autopilot, setAutopilot] = useState(saved.autopilot);
+  const [leadSeconds, setLeadSeconds] = useState(saved.leadSeconds);
+
+  useEffect(() => {
+    saveSettings({ trimA: trim.A, trimB: trim.B, fadeSeconds, leadSeconds, autopilot });
+  }, [trim.A, trim.B, fadeSeconds, leadSeconds, autopilot]);
   useAutopilot({
     enabled: autopilot,
     leadSeconds,
@@ -129,6 +146,9 @@ export default function App() {
   return (
     <div className="app">
       <AddBar onAdd={(text) => dispatch({ type: 'add', text })} rejected={queue.rejected} />
+      {IS_IOS && (
+        <p className="notice">On iPhone and iPad, YouTube ignores volume changes, so the crossfader and trims won't work. Use a laptop.</p>
+      )}
 
       {/* Decks and mixer on the left (70%), queue on the right (30%). */}
       <div className="workspace">

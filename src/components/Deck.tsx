@@ -16,6 +16,7 @@ interface Props {
 }
 
 export const ERROR_MESSAGE = "Can't play this one: blocked or unavailable";
+export const PLAYER_LOAD_ERROR = "Couldn't load the YouTube player. Check your connection and reload.";
 
 function formatTime(s: number) {
   if (!Number.isFinite(s) || s <= 0) return '0:00';
@@ -63,7 +64,7 @@ export function Deck({ id, player, item, trim, onTrim, gain }: Props) {
             {!item ? (
               'Empty'
             ) : player.error !== null ? (
-              <span className="deck__error">{ERROR_MESSAGE}</span>
+              <span className="deck__error">{player.error === -1 ? PLAYER_LOAD_ERROR : ERROR_MESSAGE}</span>
             ) : (
               STATUS[player.state]
             )}
@@ -73,7 +74,7 @@ export function Deck({ id, player, item, trim, onTrim, gain }: Props) {
 
       <div className="deck__video">
         <div ref={player.containerRef} className="deck__frame" />
-        {!item && <div className="deck__empty">Add a song to the queue</div>}
+        {!item && <div className="deck__empty">Paste a YouTube link above to load this deck</div>}
       </div>
 
       <div className="deck__time">
