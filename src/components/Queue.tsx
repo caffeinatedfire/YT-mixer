@@ -1,5 +1,4 @@
 import type { QueueItem } from '../state/queue';
-import type { Deck } from '../state/mix';
 import { thumbnailUrl } from '../lib/youtube';
 import { CloseIcon } from './Icons';
 
@@ -7,11 +6,9 @@ interface Props {
   items: QueueItem[];
   onRemove: (uid: number) => void;
   onClear: () => void;
-  /** Phase 4 manual wiring; Phase 5 replaces it with automatic cueing. */
-  onLoad: (item: QueueItem, deck: Deck) => void;
 }
 
-export function Queue({ items, onRemove, onClear, onLoad }: Props) {
+export function Queue({ items, onRemove, onClear }: Props) {
   return (
     <section className="queue" aria-label="Up next">
       <header className="queue__head">
@@ -40,13 +37,9 @@ export function Queue({ items, onRemove, onClear, onLoad }: Props) {
               >
                 youtu.be/{item.videoId}
               </a>
-              <div className="queue__actions">
-                <button className="btn btn--small" onClick={() => onLoad(item, 'A')}>Load A</button>
-                <button className="btn btn--small" onClick={() => onLoad(item, 'B')}>Load B</button>
-                <button className="btn btn--icon btn--ghost" onClick={() => onRemove(item.uid)} aria-label="Remove from queue">
-                  <CloseIcon />
-                </button>
-              </div>
+              <button className="btn btn--icon btn--ghost" onClick={() => onRemove(item.uid)} aria-label="Remove from queue">
+                <CloseIcon />
+              </button>
             </li>
           ))}
         </ol>

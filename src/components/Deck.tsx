@@ -60,12 +60,12 @@ export function Deck({ id, player, item, trim, onTrim, gain }: Props) {
             {item ? player.title || 'Loading…' : 'Add a song'}
           </div>
           <div className="deck__status">
-            {player.error !== null ? (
-              <span className="deck__error">{ERROR_MESSAGE}</span>
-            ) : item ? (
-              STATUS[player.state]
-            ) : (
+            {!item ? (
               'Empty'
+            ) : player.error !== null ? (
+              <span className="deck__error">{ERROR_MESSAGE}</span>
+            ) : (
+              STATUS[player.state]
             )}
           </div>
         </div>
