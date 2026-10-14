@@ -15,7 +15,7 @@ export function Mixer({ x, onX, anyPlaying, onPlayPauseAll, muted, onMuteAll, ch
   return (
     <section className="mixer" aria-label="Mixer">
       <div className="mixer__main">
-        <div className="crossfader">
+        <div className="crossfader" title="Left/Right arrow keys nudge the crossfader">
           <span className="crossfader__end">A</span>
           <input
             className="crossfader__input"
@@ -30,11 +30,11 @@ export function Mixer({ x, onX, anyPlaying, onPlayPauseAll, muted, onMuteAll, ch
           <span className="crossfader__end">B</span>
         </div>
         <div className="master">
-          <button className="btn btn--primary" onClick={onPlayPauseAll}>
+          <button className="btn btn--primary" onClick={onPlayPauseAll} title="Shortcut: Space">
             {anyPlaying ? <PauseIcon /> : <PlayIcon />}
             {anyPlaying ? 'Pause all' : 'Play all'}
           </button>
-          <button className={`btn${muted ? ' btn--active' : ''}`} onClick={onMuteAll} aria-pressed={muted}>
+          <button className={`btn${muted ? ' btn--active' : ''}`} onClick={onMuteAll} aria-pressed={muted} title="Shortcut: M">
             {muted ? <MutedIcon /> : <VolumeIcon />}
             {muted ? 'Unmute' : 'Mute all'}
           </button>

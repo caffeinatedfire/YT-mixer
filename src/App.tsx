@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { AddBar } from './components/AddBar';
 import { Deck, ERROR_MESSAGE } from './components/Deck';
 import { MixControls } from './components/MixControls';
@@ -7,13 +7,17 @@ import { Queue } from './components/Queue';
 import { Toast, type ToastMessage } from './components/Toast';
 import { useDeckLoader } from './hooks/useDeckLoader';
 import { useAutopilot } from './hooks/useAutopilot';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useTransitionEngine } from './hooks/useTransitionEngine';
 import { useYouTubePlayer } from './hooks/useYouTubePlayer';
 import { AD_SIGNAL_RELIABLE, DEFAULT_FADE_SECONDS, DEFAULT_LEAD_SECONDS } from './lib/config';
 import { deckEnd, outgoingDeck } from './lib/fade';
 import { deckVolume, gains } from './lib/gains';
+import { decksToResume, nudge, type RememberedDeck } from './lib/master';
 import { initialSession, sessionReducer } from './state/session';
 import { otherDeck, type Deck as DeckId } from './state/mix';
+
+const DECKS: DeckId[] = ['A', 'B'];
 
 export default function App() {
   const [session, dispatch] = useReducer(sessionReducer, initialSession);
@@ -87,21 +91,40 @@ export default function App() {
   const isLive = (s: string) => s === 'playing' || s === 'buffering';
   const anyPlaying = isLive(playerA.state) || isLive(playerB.state);
 
+  // Decks that were playing at the last Pause all, so Play all resumes exactly those.
+  const rememberedRef = useRef<RememberedDeck[] | null>(null);
+
   const playPauseAll = () => {
     if (anyPlaying) {
+      rememberedRef.current = DECKS.filter((d) => isLive(players[d].state) && decks[d]).map((d) => ({
+        deck: d,
+        uid: decks[d]!.uid,
+      }));
+      // A fade can't sensibly continue while paused; leave the crossfader where it is.
+      if (mix.kind === 'transitioning') engine.cancel();
       playerA.pause();
       playerB.pause();
     } else {
-      if (decks.A) playerA.play();
-      if (decks.B) playerB.play();
+      for (const d of decksToResume(rememberedRef.current, decks, outgoingDeck(x))) players[d].play();
+      rememberedRef.current = null;
     }
   };
 
+  // YouTube's mute is separate from volume, so each deck keeps its crossfader x trim level.
   const toggleMute = () => {
     const next = !muted;
     setMuted(next);
     for (const p of [playerA, playerB]) (next ? p.mute : p.unMute)();
   };
+
+  useKeyboardShortcuts({
+    onPlayPause: playPauseAll,
+    onMute: toggleMute,
+    onNudge: (dir) => {
+      if (mix.kind === 'transitioning') engine.cancel();
+      setX((prev) => nudge(prev, dir));
+    },
+  });
 
   return (
     <div className="app">

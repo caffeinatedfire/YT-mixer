@@ -115,7 +115,11 @@ export function useYouTubePlayer(): YouTubePlayerApi {
 
   const unMute = useCallback(() => {
     mutedRef.current = false;
-    withPlayer((p) => p.unMute());
+    withPlayer((p) => {
+      p.unMute();
+      // Unmuting at volume 0 makes YouTube bump the volume up; put ours back.
+      p.setVolume(volumeRef.current);
+    });
   }, [withPlayer]);
 
   const play = useCallback(() => withPlayer((p) => p.playVideo()), [withPlayer]);
