@@ -109,7 +109,6 @@ button, input, textarea { font: inherit; color: inherit; }
   border: 1px solid var(--border);
 }
 .deck--live .deck__badge { background: var(--accent); border-color: var(--accent); color: #fff; }
-.deck__thumb { flex: none; border-radius: 4px; object-fit: cover; }
 .deck__meta { min-width: 0; }
 .deck__title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .deck__status { font-size: var(--text-sm); color: var(--text-muted); }
@@ -133,6 +132,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .progress__fill { height: 100%; background: var(--accent); }
 
 .deck__controls { display: flex; align-items: center; gap: var(--space-4); }
+.deck__play { width: 64px; height: 28px; padding: 0; justify-content: center; }
 .trim { flex: 1; display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--text-muted); }
 .trim input { flex: 1; min-width: 0; accent-color: var(--accent); }
 .trim__value { width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
@@ -153,9 +153,11 @@ button, input, textarea { font: inherit; color: inherit; }
 .faders__channels { display: flex; align-items: center; justify-content: space-between; }
 .faders__link { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--text-muted); cursor: pointer; user-select: none; }
 .faders__link input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; }
-.channel { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); width: 40px; }
-.channel__value, .channel__label { font-size: var(--text-sm); font-variant-numeric: tabular-nums; color: var(--text-muted); }
-.channel__label { font-weight: 600; }
+/* Value sits beside its bar, facing the centre: A's on the right, B's on the left. */
+.channel { display: flex; align-items: center; gap: var(--space-2); }
+.channel--b { flex-direction: row-reverse; }
+.channel__value { width: 3ch; font-size: var(--text-sm); font-variant-numeric: tabular-nums; color: var(--text-muted); }
+.channel--b .channel__value { text-align: right; }
 .channel__bar {
   position: relative;
   width: 14px;
@@ -202,19 +204,27 @@ button, input, textarea { font: inherit; color: inherit; }
 .crossfader { flex: 1; display: flex; align-items: center; gap: var(--space-3); }
 .crossfader__end { font-weight: 600; font-size: var(--text-sm); color: var(--text-muted); }
 .crossfader__input { flex: 1; accent-color: var(--accent); height: 24px; }
-.master { display: flex; gap: var(--space-2); }
 
 /* Workspace: decks + mixer (70%) | queue (30%) */
 .workspace { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: var(--space-4); align-items: start; }
 .workspace__main { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
 
 /* Queue */
-.queue {
+.workspace__side {
   position: sticky;
   top: var(--space-4);
   display: flex;
   flex-direction: column;
+  gap: var(--space-3);
   max-height: calc(100vh - 2 * var(--space-4));
+  min-width: 0;
+}
+.workspace__side .add-bar__row { flex-wrap: wrap; }
+.workspace__side .add-bar__input { min-width: 0; }
+.queue {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   padding: var(--space-4);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -254,12 +264,11 @@ button, input, textarea { font: inherit; color: inherit; }
 
 @media (max-width: 1024px) {
   .workspace { grid-template-columns: 1fr; }
-  .queue { position: static; max-height: none; }
+  .workspace__side { position: static; max-height: none; }
 }
 
 @media (max-width: 760px) {
   .decks { grid-template-columns: 1fr; }
   .mixer__main, .mix-controls { flex-direction: column; align-items: stretch; }
   .mix-controls__group { margin-right: 0; }
-  .master { justify-content: center; }
 }

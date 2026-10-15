@@ -14,8 +14,7 @@ interface Props {
 function Channel({ deck, level, onLevel }: { deck: Deck; level: number; onLevel: (deck: Deck, v: number) => void }) {
   const pct = Math.round(level * 100);
   return (
-    <div className="channel">
-      <span className="channel__value">{pct}</span>
+    <div className={`channel channel--${deck.toLowerCase()}`}>
       <div className="channel__bar">
         <div className="channel__fill" style={{ height: `${level * 100}%` }} />
         <input
@@ -30,7 +29,7 @@ function Channel({ deck, level, onLevel }: { deck: Deck; level: number; onLevel:
           aria-orientation="vertical"
         />
       </div>
-      <span className="channel__label">{deck}</span>
+      <span className="channel__value">{pct}</span>
     </div>
   );
 }

@@ -28,7 +28,7 @@ export function AddBar({ onAdd, rejected }: Props) {
           className="add-bar__input"
           rows={1}
           value={text}
-          placeholder="Paste YouTube links (one or many) and press Enter"
+          placeholder="Paste YouTube links, press Enter"
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKeyDown}
           aria-label="YouTube links"

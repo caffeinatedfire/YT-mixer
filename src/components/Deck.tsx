@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import type { YouTubePlayerApi } from '../hooks/useYouTubePlayer';
 import type { QueueItem } from '../state/queue';
 import type { Deck as DeckId } from '../state/mix';
-import { thumbnailUrl } from '../lib/youtube';
 import { PauseIcon, PlayIcon } from './Icons';
 
 interface Props {
@@ -23,15 +22,6 @@ function formatTime(s: number) {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
-const STATUS: Record<string, string> = {
-  playing: 'Playing',
-  paused: 'Paused',
-  buffering: 'Buffering',
-  cued: 'Ready',
-  ended: 'Ended',
-  loading: 'Loading',
-  unstarted: 'Ready',
-};
 
 export function Deck({ id, player, item, trim, onTrim }: Props) {
   const [time, setTime] = useState({ now: 0, dur: 0 });
@@ -52,26 +42,19 @@ export function Deck({ id, player, item, trim, onTrim }: Props) {
     <section className={`deck${isPlaying ? ' deck--live' : ''}`} aria-label={`Deck ${id}`}>
       <header className="deck__head">
         <span className="deck__badge">{id}</span>
-        {item && <img className="deck__thumb" src={thumbnailUrl(item.videoId)} alt="" width={64} height={36} />}
         <div className="deck__meta">
           <div className="deck__title" title={player.title}>
             {item ? player.title || 'Loading…' : 'Add a song'}
           </div>
-          <div className="deck__status">
-            {!item ? (
-              'Empty'
-            ) : player.error !== null ? (
-              <span className="deck__error">{player.error === -1 ? PLAYER_LOAD_ERROR : ERROR_MESSAGE}</span>
-            ) : (
-              STATUS[player.state]
-            )}
-          </div>
+          {item && player.error !== null && (
+            <div className="deck__status deck__error">{player.error === -1 ? PLAYER_LOAD_ERROR : ERROR_MESSAGE}</div>
+          )}
         </div>
       </header>
 
       <div className="deck__video">
         <div ref={player.containerRef} className="deck__frame" />
-        {!item && <div className="deck__empty">Paste a YouTube link above to load this deck</div>}
+        {!item && <div className="deck__empty">Paste a YouTube link in the panel on the right to load this deck</div>}
       </div>
 
       <div className="deck__time">
@@ -84,7 +67,7 @@ export function Deck({ id, player, item, trim, onTrim }: Props) {
 
       <div className="deck__controls">
         <button
-          className="btn btn--icon"
+          className="btn deck__play"
           onClick={isPlaying ? player.pause : player.play}
           disabled={!item || !player.ready}
           aria-label={isPlaying ? `Pause deck ${id}` : `Play deck ${id}`}

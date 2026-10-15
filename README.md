@@ -4,8 +4,8 @@ A two-deck YouTube mixer for a casual party host. Paste YouTube links into one s
 
 ## Using it
 
-1. Paste one or more YouTube links (or bare 11-character video IDs) into the bar at the top and press Enter. The first song cues on deck A, the second on deck B, the rest wait in **Up next**.
-2. Press **Play all** (or Space). Only the deck the crossfader favours starts.
+1. Paste one or more YouTube links (or bare 11-character video IDs) into the box above **Up next** and press Enter. The first song cues on deck A, the second on deck B, the rest wait in **Up next**.
+2. Press Space to play. Only the deck the crossfader favours starts. (Each deck also has its own play button next to its trim.)
 3. When you want the next song: press **Start B**, check the video shows the song and not an ad, then press **Mix now to B**. B fades in, A pauses and loads the next song from the queue.
 4. Or turn on **Autopilot**: it mixes into the other deck a few seconds (default 8) before the current song ends.
 

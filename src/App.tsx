@@ -174,12 +174,11 @@ export default function App() {
 
   return (
     <div className="app">
-      <AddBar onAdd={(text) => dispatch({ type: 'add', text })} rejected={queue.rejected} />
       {IS_IOS && (
         <p className="notice">On iPhone and iPad, YouTube ignores volume changes, so the crossfader and trims won't work. Use a laptop.</p>
       )}
 
-      {/* Decks and mixer on the left (70%), queue on the right (30%). */}
+      {/* Decks and mixer on the left (70%), add bar + queue on the right (30%). */}
       <div className="workspace">
         <div className="workspace__main">
           <div className="decks">
@@ -189,7 +188,7 @@ export default function App() {
 
           <Mixer
             faders={<Faders levels={levels} linked={linked} onLinked={onLinked} onLevel={onLevel} x={x} onX={onCrossfader} />}
-            anyPlaying={anyPlaying} onPlayPauseAll={playPauseAll} muted={muted} onMuteAll={toggleMute}>
+          >
             <MixControls
               mix={mix}
               incoming={incoming}
@@ -208,11 +207,14 @@ export default function App() {
           </Mixer>
         </div>
 
-        <Queue
-          items={queue.items}
-          onRemove={(uid) => dispatch({ type: 'remove', uid })}
-          onClear={() => dispatch({ type: 'clear' })}
-        />
+        <aside className="workspace__side">
+          <AddBar onAdd={(text) => dispatch({ type: 'add', text })} rejected={queue.rejected} />
+          <Queue
+            items={queue.items}
+            onRemove={(uid) => dispatch({ type: 'remove', uid })}
+            onClear={() => dispatch({ type: 'clear' })}
+          />
+        </aside>
       </div>
 
       <Toast toast={toast} onDismiss={dismissToast} />
