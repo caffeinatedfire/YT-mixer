@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { autopilotDecision } from '../lib/autopilot';
 import { AUTOPILOT_POLL_MS } from '../lib/config';
-import { outgoingDeck } from '../lib/fade';
 import { otherDeck, type Deck, type MixState } from '../state/mix';
 import type { QueueItem } from '../state/queue';
 import type { YouTubePlayerApi } from './useYouTubePlayer';
@@ -11,7 +10,8 @@ interface Options {
   leadSeconds: number;
   players: Record<Deck, YouTubePlayerApi>;
   decks: Record<Deck, QueueItem | null>;
-  x: number;
+  /** The deck currently on air. */
+  active: Deck;
   mix: MixState;
   onMix: () => void;
   onHardCut: (from: Deck) => void;
@@ -26,8 +26,7 @@ export function useAutopilot(opts: Options) {
   useEffect(() => {
     if (!opts.enabled) return;
     const id = setInterval(() => {
-      const { enabled, leadSeconds, players, decks, x, mix, onMix, onHardCut } = latest.current;
-      const active = outgoingDeck(x);
+      const { enabled, leadSeconds, players, decks, active, mix, onMix, onHardCut } = latest.current;
       const incoming = otherDeck(active);
       const player = players[active];
       const decision = autopilotDecision({

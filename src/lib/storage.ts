@@ -15,6 +15,8 @@ export interface Settings {
   fadeSeconds: number;
   leadSeconds: number;
   autopilot: boolean;
+  /** Volume faders linked to the crossfader (true) or independent. */
+  linked: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -23,6 +25,7 @@ export const DEFAULT_SETTINGS: Settings = {
   fadeSeconds: DEFAULT_FADE_SECONDS,
   leadSeconds: DEFAULT_LEAD_SECONDS,
   autopilot: false,
+  linked: true,
 };
 
 function defaultStore(): KV | undefined {
@@ -86,6 +89,7 @@ export function loadSettings(store: KV | undefined = defaultStore()): Settings {
     fadeSeconds: pick('fadeSeconds', (v) => FADE_OPTIONS_SECONDS.includes(v as number)),
     leadSeconds: pick('leadSeconds', (v) => LEAD_OPTIONS_SECONDS.includes(v as number)),
     autopilot: pick('autopilot', (v) => typeof v === 'boolean'),
+    linked: pick('linked', (v) => typeof v === 'boolean'),
   };
 }
 

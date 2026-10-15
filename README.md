@@ -11,13 +11,20 @@ A two-deck YouTube mixer for a casual party host. Paste YouTube links into one s
 
 Dragging the crossfader during a fade stops the fade and leaves it where you put it.
 
+**Volume faders.** Above the crossfader, each deck has a vertical volume bar.
+- **Link volumes** checked (default): the bars follow the crossfader. Sliding it left to right takes A from 100 to 0 and B from 0 to 100 on an equal-power curve. Dragging either bar moves the crossfader, so the other bar follows.
+- **Link volumes** unchecked: each bar sets its deck's volume on its own, and the crossfader is disabled. Mix now and autopilot still work: they fade the louder deck to 0 and the other deck up to 100.
+- Switching between the two keeps what you hear. Unlinking keeps both levels. Re-linking keeps the A/B balance, so overall loudness may change.
+
+Each deck's **Trim** still scales its final volume in both modes.
+
 | Key | Action |
 | --- | --- |
 | Space | Play / pause all (resumes exactly the decks that were playing) |
 | M | Mute / unmute all (each deck keeps its volume) |
-| Left / Right | Nudge the crossfader |
+| Left / Right | Nudge the crossfader (only while volumes are linked) |
 
-The queue, the songs on each deck, the trims, fade length and autopilot settings are saved in the browser and come back after a reload.
+The queue, the songs on each deck, the trims, fade length, autopilot and Link volumes settings are saved in the browser and come back after a reload.
 
 ## Limitations
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { AddBar } from './components/AddBar';
 import { Deck, ERROR_MESSAGE, PLAYER_LOAD_ERROR } from './components/Deck';
+import { Faders } from './components/Faders';
 import { MixControls } from './components/MixControls';
 import { Mixer } from './components/Mixer';
 import { Queue } from './components/Queue';
@@ -13,7 +14,8 @@ import { useYouTubePlayer } from './hooks/useYouTubePlayer';
 import { AD_SIGNAL_RELIABLE } from './lib/config';
 import { loadSession, loadSettings, saveSession, saveSettings } from './lib/storage';
 import { deckEnd, outgoingDeck } from './lib/fade';
-import { deckVolume, gains } from './lib/gains';
+import { activeDeck, linkedLevels, xFromLevel, xFromLevels, type Levels } from './lib/faders';
+import { deckVolume } from './lib/gains';
 import { decksToResume, nudge, type RememberedDeck } from './lib/master';
 import { sessionReducer } from './state/session';
 import { otherDeck, type Deck as DeckId } from './state/mix';
@@ -53,56 +55,81 @@ export default function App() {
 
   useEffect(() => saveSession(session), [session]);
 
-  const g = gains(x);
+  // Linked: both fader levels follow the crossfader. Unlinked: each deck has its own level.
+  const [linked, setLinked] = useState(saved.linked);
+  const [unlinkedLevels, setUnlinkedLevels] = useState<Levels>(() => linkedLevels(0));
+  const levels = linked ? linkedLevels(x) : unlinkedLevels;
+  const active: DeckId = linked ? outgoingDeck(x) : activeDeck(unlinkedLevels);
+
   const { setVolume: setVolA } = playerA;
   const { setVolume: setVolB } = playerB;
 
-  // Apply crossfader x trim to both players whenever either changes.
+  // Apply fader level x trim to both players whenever either changes.
   useEffect(() => {
-    setVolA(deckVolume(g.a, trim.A));
-    setVolB(deckVolume(g.b, trim.B));
-  }, [g.a, g.b, trim.A, trim.B, setVolA, setVolB]);
+    setVolA(deckVolume(levels.A, trim.A));
+    setVolB(deckVolume(levels.B, trim.B));
+  }, [levels.A, levels.B, trim.A, trim.B, setVolA, setVolB]);
 
   const players = { A: playerA, B: playerB };
   const [fadeSeconds, setFadeSeconds] = useState(saved.fadeSeconds);
   const engine = useTransitionEngine({
     players,
+    active,
+    linked,
     x,
     setX,
+    levels: unlinkedLevels,
+    setLevels: setUnlinkedLevels,
     fadeMs: fadeSeconds * 1000,
     // The outgoing deck is paused; load the next queue item onto it.
     onMixed: (from) => dispatch({ type: 'advance', deck: from }),
   });
   const { mix } = engine;
-  const incoming = mix.kind === 'transitioning' ? mix.to : otherDeck(outgoingDeck(x));
+  const incoming = mix.kind === 'transitioning' ? mix.to : otherDeck(active);
 
   const [autopilot, setAutopilot] = useState(saved.autopilot);
   const [leadSeconds, setLeadSeconds] = useState(saved.leadSeconds);
 
   useEffect(() => {
-    saveSettings({ trimA: trim.A, trimB: trim.B, fadeSeconds, leadSeconds, autopilot });
-  }, [trim.A, trim.B, fadeSeconds, leadSeconds, autopilot]);
+    saveSettings({ trimA: trim.A, trimB: trim.B, fadeSeconds, leadSeconds, autopilot, linked });
+  }, [trim.A, trim.B, fadeSeconds, leadSeconds, autopilot, linked]);
   useAutopilot({
     enabled: autopilot,
     leadSeconds,
     players,
     decks,
-    x,
+    active,
     mix,
     onMix: engine.start,
     // The active song ended without a mix: jump straight to the other deck.
     onHardCut: (from) => {
       const to = otherDeck(from);
-      setX(deckEnd(to));
+      if (linked) setX(deckEnd(to));
+      else setUnlinkedLevels({ [from]: 0, [to]: 1 } as Levels);
       players[to].play();
       dispatch({ type: 'advance', deck: from });
     },
   });
 
-  // Dragging the crossfader mid-fade hands control back to the host.
-  const onCrossfader = (v: number) => {
+  // Touching any fader mid-fade hands control back to the host.
+  const cancelFade = () => {
     if (mix.kind === 'transitioning') engine.cancel();
+  };
+  const onCrossfader = (v: number) => {
+    cancelFade();
     setX(v);
+  };
+  const onLevel = (deck: DeckId, v: number) => {
+    cancelFade();
+    if (linked) setX(xFromLevel(deck, v));
+    else setUnlinkedLevels((l) => ({ ...l, [deck]: v }));
+  };
+  // Switching modes starts from what you hear: unlinking keeps both levels, re-linking keeps the A/B balance.
+  const onLinked = (next: boolean) => {
+    cancelFade();
+    if (next) setX(xFromLevels(unlinkedLevels, x));
+    else setUnlinkedLevels(linkedLevels(x));
+    setLinked(next);
   };
 
   const isLive = (s: string) => s === 'playing' || s === 'buffering';
@@ -122,7 +149,7 @@ export default function App() {
       playerA.pause();
       playerB.pause();
     } else {
-      for (const d of decksToResume(rememberedRef.current, decks, outgoingDeck(x))) players[d].play();
+      for (const d of decksToResume(rememberedRef.current, decks, active)) players[d].play();
       rememberedRef.current = null;
     }
   };
@@ -137,8 +164,10 @@ export default function App() {
   useKeyboardShortcuts({
     onPlayPause: playPauseAll,
     onMute: toggleMute,
+    // The crossfader only exists while linked.
     onNudge: (dir) => {
-      if (mix.kind === 'transitioning') engine.cancel();
+      if (!linked) return;
+      cancelFade();
       setX((prev) => nudge(prev, dir));
     },
   });
@@ -154,11 +183,13 @@ export default function App() {
       <div className="workspace">
         <div className="workspace__main">
           <div className="decks">
-            <Deck id="A" player={playerA} item={decks.A} trim={trim.A} onTrim={(v) => setTrim((t) => ({ ...t, A: v }))} gain={g.a} />
-            <Deck id="B" player={playerB} item={decks.B} trim={trim.B} onTrim={(v) => setTrim((t) => ({ ...t, B: v }))} gain={g.b} />
+            <Deck id="A" player={playerA} item={decks.A} trim={trim.A} onTrim={(v) => setTrim((t) => ({ ...t, A: v }))} />
+            <Deck id="B" player={playerB} item={decks.B} trim={trim.B} onTrim={(v) => setTrim((t) => ({ ...t, B: v }))} />
           </div>
 
-          <Mixer x={x} onX={onCrossfader} anyPlaying={anyPlaying} onPlayPauseAll={playPauseAll} muted={muted} onMuteAll={toggleMute}>
+          <Mixer
+            faders={<Faders levels={levels} linked={linked} onLinked={onLinked} onLevel={onLevel} x={x} onX={onCrossfader} />}
+            anyPlaying={anyPlaying} onPlayPauseAll={playPauseAll} muted={muted} onMuteAll={toggleMute}>
             <MixControls
               mix={mix}
               incoming={incoming}

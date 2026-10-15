@@ -71,6 +71,12 @@ Stays behind a toggle (off by default; Q3 closed with no ad signal), plus a "sta
 ## Phase 9: Polish + deploy
 Empty states, error toasts, localStorage persistence for queue and settings (wrapped in try/catch), laptop-width layout, README listing limitations (ads, iOS volume, blocked embeds), deploy to Vercel.
 
+## Post-plan feature: linked / independent volume faders (2026-10-16)
+- Two vertical volume bars (A, B) above the crossfader, with a "Link volumes" checkbox between them (default on, persisted).
+- Linked: bars follow the equal-power curve; dragging a bar moves the crossfader.
+- Unlinked: each bar sets its deck's level; the crossfader and arrow-key nudge are disabled. Mixes fade the louder deck to 0 and the other to full (equal-power shapes).
+- Final volume = round(level * trim) in both modes. The per-deck output-level bar was removed (the vertical bars replace it).
+
 ## Out of scope
 EQ, beat-match, Layer mode, playlist import, accounts, backend, mobile, Chrome extension.
 

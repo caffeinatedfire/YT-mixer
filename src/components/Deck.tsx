@@ -11,8 +11,6 @@ interface Props {
   item: QueueItem | null;
   trim: number;
   onTrim: (v: number) => void;
-  /** Crossfader gain for this deck, 0..1 */
-  gain: number;
 }
 
 export const ERROR_MESSAGE = "Can't play this one: blocked or unavailable";
@@ -35,7 +33,7 @@ const STATUS: Record<string, string> = {
   unstarted: 'Ready',
 };
 
-export function Deck({ id, player, item, trim, onTrim, gain }: Props) {
+export function Deck({ id, player, item, trim, onTrim }: Props) {
   const [time, setTime] = useState({ now: 0, dur: 0 });
   const { getTime, getDuration } = player;
 
@@ -49,7 +47,6 @@ export function Deck({ id, player, item, trim, onTrim, gain }: Props) {
 
   const isPlaying = player.state === 'playing' || player.state === 'buffering';
   const pct = time.dur > 0 ? Math.min(100, (time.now / time.dur) * 100) : 0;
-  const level = Math.round(gain * 100);
 
   return (
     <section className={`deck${isPlaying ? ' deck--live' : ''}`} aria-label={`Deck ${id}`}>
@@ -99,9 +96,6 @@ export function Deck({ id, player, item, trim, onTrim, gain }: Props) {
           <input type="range" min={0} max={100} value={trim} onChange={(e) => onTrim(Number(e.target.value))} />
           <span className="trim__value">{trim}</span>
         </label>
-        <div className="level" title="Output level after crossfader">
-          <div className="level__fill" style={{ width: `${level}%` }} />
-        </div>
       </div>
     </section>
   );

@@ -78,7 +78,7 @@ describe('session persistence', () => {
 describe('settings persistence', () => {
   it('round-trips settings', () => {
     const store = new MemoryStorage();
-    const settings = { trimA: 80, trimB: 65, fadeSeconds: 10, leadSeconds: 12, autopilot: true };
+    const settings = { trimA: 80, trimB: 65, fadeSeconds: 10, leadSeconds: 12, autopilot: true, linked: false };
     saveSettings(settings, store);
     expect(loadSettings(store)).toEqual(settings);
   });
@@ -87,7 +87,7 @@ describe('settings persistence', () => {
     const store = new MemoryStorage();
     store.setItem(
       'ytmixer.settings.v1',
-      JSON.stringify({ trimA: 500, trimB: 40, fadeSeconds: 7, leadSeconds: 'x', autopilot: 'yes' }),
+      JSON.stringify({ trimA: 500, trimB: 40, fadeSeconds: 7, leadSeconds: 'x', autopilot: 'yes', linked: 1 }),
     );
     expect(loadSettings(store)).toEqual({ ...DEFAULT_SETTINGS, trimB: 40 });
   });

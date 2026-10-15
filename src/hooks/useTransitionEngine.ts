@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { FADE_TICK_MS, PLAY_WAIT_TIMEOUT_MS } from '../lib/config';
-import { deckEnd, outgoingDeck, rampX } from '../lib/fade';
+import { deckEnd, rampX } from '../lib/fade';
+import { unlinkedRamp, type Levels } from '../lib/faders';
 import { initialMix, mixReducer, otherDeck, type Deck } from '../state/mix';
 import type { YouTubePlayerApi } from './useYouTubePlayer';
 
 interface Options {
   players: Record<Deck, YouTubePlayerApi>;
+  /** The deck currently on air (crossfader side when linked, louder fader when unlinked). */
+  active: Deck;
+  /** Linked: ramp the crossfader. Unlinked: ramp each deck's level. */
+  linked: boolean;
   x: number;
   setX: (x: number) => void;
+  levels: Levels;
+  setLevels: (levels: Levels) => void;
   fadeMs: number;
   /** Called once the fade lands; the outgoing deck is already paused. */
   onMixed: (from: Deck) => void;
@@ -15,7 +22,8 @@ interface Options {
 
 /**
  * Mix sequence: start the incoming deck, wait for PLAYING (with a timeout), ramp the crossfader
- * to the incoming deck's end, then pause the outgoing deck and hand it back via onMixed.
+ * to the incoming deck's end (or, unlinked, the outgoing level to 0 and the incoming to full),
+ * then pause the outgoing deck and hand it back via onMixed.
  */
 export function useTransitionEngine(opts: Options) {
   const [mix, dispatch] = useReducer(mixReducer, initialMix);
@@ -39,8 +47,8 @@ export function useTransitionEngine(opts: Options) {
 
   const start = useCallback(() => {
     if (runningRef.current) return;
-    const { players, x } = latest.current;
-    const from = outgoingDeck(x);
+    const { players, active } = latest.current;
+    const from = active;
     const to = otherDeck(from);
     if (!players[to].ready) return;
 
@@ -52,13 +60,13 @@ export function useTransitionEngine(opts: Options) {
     if (incoming.state !== 'playing') incoming.play();
 
     const ramp = () => {
-      const startX = latest.current.x;
+      const { linked, x: startX, levels: startLevels, fadeMs } = latest.current;
       const targetX = deckEnd(to);
-      const fadeMs = latest.current.fadeMs;
       const t0 = performance.now();
       timerRef.current = setInterval(() => {
         const { x: nx, progress } = rampX(startX, targetX, performance.now() - t0, fadeMs);
-        latest.current.setX(nx);
+        if (linked) latest.current.setX(nx);
+        else latest.current.setLevels(unlinkedRamp(startLevels, from, progress));
         dispatch({ type: 'progress', progress });
         if (progress >= 1) {
           stopTimer();
